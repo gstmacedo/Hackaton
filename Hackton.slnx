@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Itens de Solução/">
+    <File Path=".gitignore" />
+  </Folder>
+  <Project Path="Hackton.Application/Hackton.Application.csproj" />
+  <Project Path="Hackton.Domain/Hackton.Domain.csproj" />
+  <Project Path="Hackton.Service/Hackton.Service.csproj" />
+</Solution>
