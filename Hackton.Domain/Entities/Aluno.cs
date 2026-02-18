@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -13,13 +14,12 @@ namespace Hackton.Domain.Entities
         [Required]
         [Column("id")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+        public Guid Id { get; set; }
 
-        [ForeignKey("pre_cadastros")]
+        
         [Column("pre_cadastro_id")]
-        public int PreCadastroId { get; set; }
+        public Guid PreCadastroId { get; set; }
 
-        public PreCadastro PreCadastro { get; set; }
 
         [Column("nome_completo", TypeName = "varchar(255)")]
         public string Nome { get; set; }
@@ -39,8 +39,8 @@ namespace Hackton.Domain.Entities
         [Column("status", TypeName = "varchar(20)")]
         public string Status { get; set; }
 
-        [Column("utilizado_em", TypeName = "timestamp")]
-        public DateTime UtilizadoEm { get; set; }
+        [Column("atualizado_em", TypeName = "timestamp")]
+        public DateTime AtualizadoEm { get; set; }
 
         [Column("criado_em", TypeName = "timestamp")]
         public DateTime CriadoEm { get; set; }

@@ -14,8 +14,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Hackton.Domain\Hackton.Domain.csproj" />
 	</ItemGroup>
-
 	<ItemGroup>
-	  <Folder Include="Service\" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 	</ItemGroup>
 </Project>

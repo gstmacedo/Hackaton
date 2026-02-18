@@ -1,7 +1,271 @@
 ﻿@page "/"
 
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="container py-4">
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-0">Lista de Alunos</h3>
+                <small class="text-muted">Visualização detalhada dos alunos cadastrados.</small>
+            </div>
+        <div class="d-flex gap-2 align-items-center flex-nowrap">
+            <div class="input-group flex-grow-1" style="min-width:0;flex:1 1 auto;">
+                <input class="form-control" placeholder="Pesquisar por nome..." aria-label="Pesquisar por nome" @bind="SearchTerm" @bind:event="oninput" />
+                <button type="button" class="btn btn-outline-secondary" @onclick="ApplyFilter" title="Pesquisar" aria-label="Pesquisar">🔍</button>
+            </div>
+            <button type="button" class="btn btn-primary text-nowrap btn-sm" @onclick="CreateAluno">➕&nbsp;Registrar pré-cadastro</button>
+        </div>
+    </div>
+    </div>
 
-Welcome to your new app.
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-warning">@errorMessage</div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="mt-2 text-muted">Carregando alunos...</div>
+        </div>
+    }
+    else if (filteredAlunos == null || filteredAlunos.Count == 0)
+    {
+        <div class="alert alert-secondary">Nenhum aluno encontrado.</div>
+    }
+    else
+    {
+        <div class="table-responsive shadow-sm">
+            <table class="table table-striped table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Aluno</th>
+                        <th class="d-none d-md-table-cell">Mãe</th>
+                        <th class="d-none d-md-table-cell">Pai</th>
+                        <th>RG Aluno</th>
+                        <th class="d-none d-md-table-cell">RG Responsável</th>
+                        <th>Status</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var aluno in filteredAlunos)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;font-weight:600;">@GetInitials(aluno.Nome)</div>
+                                    <div>
+                                        <div class="fw-semibold">@aluno.Nome</div>
+                                        <div class="text-muted small d-none d-md-block">Criado: @aluno.CriadoEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="d-none d-md-table-cell">@aluno.NomeName</td>
+                            <td class="d-none d-md-table-cell">@aluno.NomePai</td>
+                            <td>@aluno.RgAluno</td>
+                            <td class="d-none d-md-table-cell">@aluno.RgResponsavel</td>
+                            <td><span class="badge @GetStatusClass(aluno.Status)">@aluno.Status</span></td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-secondary me-1" @onclick="() => ValidarAluno(aluno.Id)" title="Validar">✏️</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary me-1" @onclick="() => EditAluno(aluno.Id)" title="Editar">✏️</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(aluno.Id)" title="Excluir">🗑️</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted">Total: @((filteredAlunos ?? new List<Aluno>()).Count) aluno(s)</small>
+        <div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="Refresh">🔁 Atualizar</button>
+        </div>
+    </div>
+
+    @if (confirmDeleteId.HasValue)
+    {
+        <div class="modal fade show" style="display:block;" tabindex="-1" aria-modal="true" role="dialog">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirmar exclusão</h5>
+                        <button type="button" class="btn-close" aria-label="Close" @onclick="CancelDelete"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Deseja realmente excluir este aluno? Esta ação não pode ser desfeita.</p>
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger">@errorMessage</div>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Cancelar</button>
+                        <button type="button" class="btn btn-danger" @onclick="DeleteConfirmed" disabled="@(deletingId.HasValue)">@(deletingId.HasValue ? "Excluindo..." : "Excluir")</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+    }
+
+</div>
+
+@code{
+    private List<Aluno>? alunos;
+    private List<Aluno>? filteredAlunos;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private Guid? confirmDeleteId;
+    private Guid? deletingId;
+    private string? searchTerm;
+
+    private string? SearchTerm
+    {
+        get => searchTerm;
+        set
+        {
+            if (searchTerm == value) return;
+            searchTerm = value;
+            // apply filter as user types
+            _ = ApplyFilter();
+        }
+    }
+ 
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAlunos();
+    }
+
+    private async Task LoadAlunos()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            alunos = await Http.GetFromJsonAsync<List<Aluno>>("https://localhost:7297/Aluno");
+            filteredAlunos = alunos is null ? new List<Aluno>() : new List<Aluno>(alunos);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro ao carregar alunos: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    async Task ApplyFilter()
+    {
+        if (alunos == null)
+        {
+            filteredAlunos = new List<Aluno>();
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredAlunos = new List<Aluno>(alunos);
+        }
+        else
+        {
+            filteredAlunos = alunos
+                .Where(a => !string.IsNullOrEmpty(a.Nome) && a.Nome.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void CreateAluno()
+    {
+        Navigation.NavigateTo("/alunos/create");
+    }
+    void ValidarAluno(Guid id)
+    {
+        Navigation.NavigateTo($"/validacao/{id}");
+    }
+    void EditAluno(Guid id)
+    {
+        Navigation.NavigateTo($"/alunos/edit/{id}");
+    }
+
+    void ConfirmDelete(Guid id)
+    {
+        confirmDeleteId = id;
+    }
+
+    void CancelDelete()
+    {
+        confirmDeleteId = null;
+        errorMessage = null;
+    }
+
+    async Task DeleteConfirmed()
+    {
+        if (!confirmDeleteId.HasValue) return;
+        deletingId = confirmDeleteId;
+        try
+        {
+            var res = await Http.DeleteAsync($"https://localhost:7297/Aluno/{deletingId.Value}");
+            if (res.IsSuccessStatusCode)
+            {
+                alunos?.RemoveAll(a => a.Id == deletingId.Value);
+                filteredAlunos?.RemoveAll(a => a.Id == deletingId.Value);
+            }
+            else
+            {
+                errorMessage = "Falha ao excluir o aluno.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Erro ao excluir: " + ex.Message;
+        }
+        finally
+        {
+            deletingId = null;
+            confirmDeleteId = null;
+        }
+    }
+
+    async Task Refresh()
+    {
+        await LoadAlunos();
+    }
+
+    string GetInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0].Substring(0, 1).ToUpper();
+        return (parts[0][0].ToString() + parts[^1][0].ToString()).ToUpper();
+    }
+
+    string GetStatusClass(string? status)
+    {
+        return status?.ToLower() switch
+        {
+            "ativo" => "bg-success text-white",
+            "inativo" => "bg-secondary text-white",
+            "pendente" => "bg-warning text-dark",
+            _ => "bg-info text-dark",
+        };
+    }
+
+    private int testCount = 0;
+    void IncrementTest()
+    {
+        testCount++;
+    }
+}

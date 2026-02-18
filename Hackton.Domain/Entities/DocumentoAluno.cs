@@ -12,11 +12,11 @@ namespace Hackton.Domain.Entities
         [Key]
         [Required]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
+        public Guid Id { get; set; }
 
         [ForeignKey("alunos")]
         [Column("aluno_id")]
-        public int AlunoId { get; set; }
+        public Guid AlunoId { get; set; }
 
         public Aluno Aluno { get; set; }
 

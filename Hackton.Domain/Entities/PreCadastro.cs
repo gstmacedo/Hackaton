@@ -14,13 +14,13 @@ namespace Hackton.Domain.Entities
         [Required]
         [Column("id")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int id { get; set; }
+        public Guid id { get; set; }
 
         [Column("email", TypeName = "varchar(255)")]
-        public string email { get; set; }
+        public string Email { get; set; }
 
         [Column("hash_token", TypeName = "TEXT")]
-        public string hashToken { get; set; }
+        public string HashToken { get; set; }
 
         [Column("expira_em", TypeName = "timestamp")]
         public DateTime ExpiraEm { get; set; }
