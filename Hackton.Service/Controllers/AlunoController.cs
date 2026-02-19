@@ -1,7 +1,9 @@
-﻿using Hackton.Domain.Entities;
+﻿using Hackton.Domain.DTO;
+using Hackton.Domain.Entities;
 using Hackton.Domain.ModelsFromView;
 using Hackton.Service.Service;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 
 namespace Hackton.Service.Controllers
 {
@@ -30,6 +32,29 @@ namespace Hackton.Service.Controllers
                 return NotFound();
             }
             return Ok(alunoCompleto);
+        }
+
+        [HttpPost("ValidateStudent")]
+        public async Task<ActionResult> ValidateStudent([FromBody] ValidateBody validate)
+        {
+            await _alunoService.ValidateStudentAsync(validate);
+            return Ok();
+        }
+
+        [HttpPut("UpdateAluno")]
+        public async Task<ActionResult> UpdateAluno([FromBody] AlunoCompleto aluno)
+        {
+            await _alunoService.UpdateAlunoAsync(aluno);
+            return Ok();
+        }
+
+        [HttpDelete("DeleteAluno")]
+        public async Task<ActionResult> DeleteAluno(Guid id)
+        {
+            await _alunoService.DeleteAlunoAsync(id);
+            return Ok();
+
+
         }
     }
 }

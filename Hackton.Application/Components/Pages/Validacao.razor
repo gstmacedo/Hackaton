@@ -52,10 +52,7 @@
                             <div class="card mb-3">
                                 <div class="card-header">Informações Pessoais</div>
                                 <div class="card-body">
-                                    <div class="mb-2">
-                                        <label class="form-label small text-muted">ID</label>
-                                        <input class="form-control-plaintext" readonly value="@aluno?.Aluno?.Id" />
-                                    </div>
+  
                                     <div class="mb-2">
                                         <label class="form-label small text-muted">Nome completo</label>
                                         <input class="form-control-plaintext" readonly value="@aluno?.Aluno?.Nome" />
@@ -129,35 +126,40 @@
                             <div class="card mb-3">
                                 <div class="card-header">Documentos / Anexos</div>
                                 <div class="card-body">
-                                    @if (aluno?.DocumentoAluno == null)
+                                    @if (aluno?.DocumentosAluno == null || aluno.DocumentosAluno.Count == 0)
                                     {
                                         <div class="text-muted">Nenhum documento enviado.</div>
                                     }
                                     else
                                     {
-                                        <div class="mb-2">
-                                            <label class="form-label small text-muted">Tipo</label>
-                                            <input class="form-control-plaintext" readonly value="@aluno.DocumentoAluno.TipoDocumento" />
-                                        </div>
-                                        <div class="mb-2">
-                                            <label class="form-label small text-muted">Arquivo</label>
-                                            @if (!string.IsNullOrEmpty(aluno.DocumentoAluno.CaminhoArquivo) && Uri.IsWellFormedUriString(aluno.DocumentoAluno.CaminhoArquivo, UriKind.Absolute))
-                                            {
-                                                <a class="btn btn-sm btn-outline-primary" target="_blank" href="@aluno.DocumentoAluno.CaminhoArquivo">Abrir arquivo</a>
-                                            }
-                                            else
-                                            {
-                                                <input class="form-control-plaintext" readonly value="@aluno.DocumentoAluno.CaminhoArquivo" />
-                                            }
-                                        </div>
-                                        <div class="mb-2">
-                                            <label class="form-label small text-muted">Tipo MIME</label>
-                                            <input class="form-control-plaintext" readonly value="@aluno.DocumentoAluno.TipoMime" />
-                                        </div>
-                                        <div class="mb-2">
-                                            <label class="form-label small text-muted">Enviado em</label>
-                                            <input class="form-control-plaintext" readonly value="@FormatValueString(aluno.DocumentoAluno.EnviadoEm)" />
-                                        </div>
+                                        @foreach (var doc in aluno.DocumentosAluno)
+                                        {
+                                            <div class="mb-3 border rounded p-2">
+                                                <div class="mb-2">
+                                                    <label class="form-label small text-muted">Tipo</label>
+                                                    <input class="form-control-plaintext" readonly value="@doc.TipoDocumento" />
+                                                </div>
+                                                <div class="mb-2">
+                                                    <label class="form-label small text-muted">Arquivo</label>
+                                                    @if (!string.IsNullOrEmpty(doc.CaminhoArquivo) && Uri.IsWellFormedUriString(doc.CaminhoArquivo, UriKind.Absolute))
+                                                    {
+                                                        <a class="btn btn-sm btn-outline-primary" target="_blank" href="@doc.CaminhoArquivo">Abrir arquivo</a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <input class="form-control-plaintext" readonly value="@doc.CaminhoArquivo" />
+                                                    }
+                                                </div>
+                                                <div class="mb-2">
+                                                    <label class="form-label small text-muted">Tipo MIME</label>
+                                                    <input class="form-control-plaintext" readonly value="@doc.TipoMime" />
+                                                </div>
+                                                <div class="mb-2">
+                                                    <label class="form-label small text-muted">Enviado em</label>
+                                                    <input class="form-control-plaintext" readonly value="@FormatValueString(doc.EnviadoEm)" />
+                                                </div>
+                                            </div>
+                                        }
                                     }
                                 </div>
                             </div>
@@ -166,10 +168,6 @@
                                 <div class="card-header">Metadados</div>
                                 <div class="card-body">
                                     <div class="row">
-                                        <div class="col-12 col-md-6 mb-2">
-                                            <label class="form-label small text-muted">PreCadastroId</label>
-                                            <input class="form-control-plaintext" readonly value="@aluno?.Aluno?.PreCadastroId" />
-                                        </div>
                                         <div class="col-6 col-md-3 mb-2">
                                             <label class="form-label small text-muted">Criado em</label>
                                             <input class="form-control-plaintext" readonly value="@FormatValueString(aluno?.Aluno?.CriadoEm)" />
@@ -217,14 +215,14 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        await LoadAluno();
+    }
+    public async Task LoadAluno()
+    {
         try
         {
 
             aluno = await Http.GetFromJsonAsync<AlunoCompleto>($"https://localhost:7297/Aluno/GetAlunoById?id={Id}");
-            if (aluno is not null)
-            {
-                // loaded
-            }
         }
         catch (Exception ex)
         {
@@ -235,7 +233,6 @@
             isLoading = false;
         }
     }
-
     private string FormatValueString(object? value)
     {
         if (value == null) return "(vazio)";
@@ -353,8 +350,8 @@
         statusMessage = null;
         try
         {
-            var url = $"https://localhost:7297/Aluno/{action}?id={id}";
-            var payload = new { Id = id, Notes = validatorNotes };
+            var url = $"https://localhost:7297/Aluno/ValidateStudent";
+            var payload = new { Id = id,Action = action, Note = validatorNotes };
             var content = new StringContent(JsonSerializer.Serialize(payload), System.Text.Encoding.UTF8, "application/json");
             var resp = await Http.PostAsync(url, content);
             if (resp.IsSuccessStatusCode)
@@ -366,6 +363,7 @@
                 var conteudo = await resp.Content.ReadAsStringAsync();
                 statusMessage = $"Erro ao enviar decisão: {resp.StatusCode} - {conteudo}";
             }
+            await LoadAluno();
         }
         catch (Exception ex)
         {
@@ -380,9 +378,10 @@
     {
         return status?.ToLower() switch
         {
-            "ativo" => "bg-success text-white",
+            "aprovado" => "bg-success text-white",
             "inativo" => "bg-secondary text-white",
-            "pendente" => "bg-warning text-dark",
+            "pendente" => "bg-warning text-white",
+            "reprovado" => "bg-danger text-dark",
             _ => "bg-info text-dark",
         };
     }

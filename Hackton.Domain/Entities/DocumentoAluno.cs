@@ -12,6 +12,7 @@ namespace Hackton.Domain.Entities
         [Key]
         [Required]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Column("id")]
         public Guid Id { get; set; }
 
         [ForeignKey("alunos")]
