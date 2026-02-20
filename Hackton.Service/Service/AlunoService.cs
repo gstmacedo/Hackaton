@@ -68,7 +68,7 @@ namespace Hackton.Service.Service
             //model.DocumentoAluno.AlunoId = model.Aluno.Id;
             //model.DocumentoAluno.EnviadoEm = DateTime.UtcNow;
 
-            model.Aluno.Status = "PENDENTE";
+            model.Aluno.Status = "pendente";
             model.Aluno.CriadoEm = DateTime.Now;
             model.Aluno.AtualizadoEm = DateTime.Now;
             model.Aluno.DataNascimento = Convert.ToDateTime(model.Aluno.DataNascimento);
