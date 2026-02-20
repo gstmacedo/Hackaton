@@ -11,10 +11,8 @@ namespace Hackton.Domain.ModelsFromView
 
         public Endereco? Endereco { get; set; }
 
-<<<<<<< HEAD
-        public DocumentoAluno? DocumentoAluno { get; set; }
-=======
+
         public List<DocumentoAluno>? DocumentosAluno { get; set; }
->>>>>>> 9aeaa401bce812b872376b7f315dcb3f5de2ed12
+
     }
 }

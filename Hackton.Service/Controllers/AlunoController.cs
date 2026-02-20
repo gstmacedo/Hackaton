@@ -45,12 +45,7 @@ namespace Hackton.Service.Controllers
                 await arquivo.CopyToAsync(stream);
             }
 
-            if (model.DocumentoAluno == null)
-                model.DocumentoAluno = new DocumentoAluno();
-
-            model.DocumentoAluno.CaminhoArquivo = $"uploads/{nomeArquivo}";
-            model.DocumentoAluno.TipoMime = arquivo.ContentType;
-
+            
             var resultado = await _alunoService
                 .CriarAlunoCompletoAsync(model, token);
 
