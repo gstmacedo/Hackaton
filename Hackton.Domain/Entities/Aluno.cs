@@ -46,6 +46,10 @@ namespace Hackton.Domain.Entities
         public DateTime CriadoEm { get; set; }
 
 
+        [Column("data_nascimento", TypeName = "timestamp")]
+        public DateTime DataNascimento { get; set; }
+
+
 
 
 

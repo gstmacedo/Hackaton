@@ -39,8 +39,8 @@ namespace Hackton.Service.Service
         public async Task<bool> CriarAlunoCompletoAsync(AlunoCompleto model, string token)
         {
             if (model.Aluno == null ||
-                model.Endereco == null ||
-                model.DocumentoAluno == null)
+                model.Endereco == null
+                /*model.DocumentoAluno == null*/)
                 return false;
 
             var hash = GerarHash(token);
@@ -51,33 +51,32 @@ namespace Hackton.Service.Service
             if (preCadastro == null)
                 return false;
 
-            if (preCadastro.ExpiraEm < DateTime.UtcNow)
+            if (preCadastro.ExpiraEm < DateTime.Now)
                 return false;
 
-            if (preCadastro.UtilizadoEm != null)
-                return false;
+            
 
             model.Aluno.Id = Guid.NewGuid();
             model.Endereco.Id = Guid.NewGuid();
-            model.DocumentoAluno.Id = Guid.NewGuid();
+            //model.DocumentoAluno.Id = Guid.NewGuid();
 
             model.Aluno.PreCadastroId = preCadastro.id;
 
             model.Endereco.AlunoId = model.Aluno.Id;
-            model.Endereco.CriadoEm = DateTime.UtcNow;
+            model.Endereco.CriadoEm = DateTime.Now;
 
-            model.DocumentoAluno.AlunoId = model.Aluno.Id;
-            model.DocumentoAluno.EnviadoEm = DateTime.UtcNow;
+            //model.DocumentoAluno.AlunoId = model.Aluno.Id;
+            //model.DocumentoAluno.EnviadoEm = DateTime.UtcNow;
 
             model.Aluno.Status = "PENDENTE";
-            model.Aluno.CriadoEm = DateTime.UtcNow;
-            model.Aluno.AtualizadoEm = DateTime.UtcNow;
-
+            model.Aluno.CriadoEm = DateTime.Now;
+            model.Aluno.AtualizadoEm = DateTime.Now;
+            model.Aluno.DataNascimento = Convert.ToDateTime(model.Aluno.DataNascimento);
             _context.Alunos.Add(model.Aluno);
             _context.Enderecos.Add(model.Endereco);
-            _context.DocumentosAluno.Add(model.DocumentoAluno);
+            //_context.DocumentosAluno.Add(model.DocumentoAluno);
 
-            preCadastro.UtilizadoEm = DateTime.UtcNow;
+            preCadastro.UtilizadoEm = DateTime.Now;
 
             await _context.SaveChangesAsync();
 

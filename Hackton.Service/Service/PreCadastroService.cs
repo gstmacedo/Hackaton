@@ -24,13 +24,13 @@ namespace Hackton.Service.Service
             var hash = GerarHash(token);
 
             preCadastro.HashToken = hash;
-            preCadastro.ExpiraEm = DateTime.UtcNow.AddDays(2);
-            preCadastro.CriadoEm = DateTime.UtcNow;
+            preCadastro.ExpiraEm = DateTime.Now.AddDays(2);
+            preCadastro.CriadoEm = DateTime.Now;
 
             _context.PreCadastros.Add(preCadastro);
             await _context.SaveChangesAsync();
 
-            var link = $"https://localhost:7193/enviar-dados/{token}";
+            var link = $"https://localhost:7044/finalizar-cadastro/{token}";
 
             await _emailService.EnviarEmailAsync(preCadastro.Email, link);
         }

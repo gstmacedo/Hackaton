@@ -23,27 +23,27 @@ namespace Hackton.Service.Controllers
         [HttpPost("finalizar-cadastro")]
         public async Task<IActionResult> EnviarCadastro(
             [FromForm] AlunoCompleto model,
-            [FromForm] string token,
-            IFormFile arquivo)
+            [FromForm] string token
+            )
         {
-            if (arquivo == null || arquivo.Length == 0)
-                return BadRequest("Arquivo não enviado.");
+            //if (arquivo == null || arquivo.Length == 0)
+            //    return BadRequest("Arquivo não enviado.");
 
-            if (arquivo.Length > 5 * 1024 * 1024)
-                return BadRequest("Arquivo muito grande. Máx 5MB.");
+            //if (arquivo.Length > 5 * 1024 * 1024)
+            //    return BadRequest("Arquivo muito grande. Máx 5MB.");
 
-            var pastaUploads = Path.Combine(_env.WebRootPath, "uploads");
+            //var pastaUploads = Path.Combine(_env.WebRootPath, "uploads");
 
-            if (!Directory.Exists(pastaUploads))
-                Directory.CreateDirectory(pastaUploads);
+            //if (!Directory.Exists(pastaUploads))
+            //    Directory.CreateDirectory(pastaUploads);
 
-            var nomeArquivo = $"{Guid.NewGuid()}_{arquivo.FileName}";
-            var caminhoCompleto = Path.Combine(pastaUploads, nomeArquivo);
+            //var nomeArquivo = $"{Guid.NewGuid()}_{arquivo.FileName}";
+            //var caminhoCompleto = Path.Combine(pastaUploads, nomeArquivo);
 
-            using (var stream = new FileStream(caminhoCompleto, FileMode.Create))
-            {
-                await arquivo.CopyToAsync(stream);
-            }
+            //using (var stream = new FileStream(caminhoCompleto, FileMode.Create))
+            //{
+            //    await arquivo.CopyToAsync(stream);
+            //}
 
             
             var resultado = await _alunoService

@@ -1,8 +1,8 @@
-﻿@page "/finalizar-cadastro"
-@using Hackton.Domain.Entities
-@using Hackton.Domain.ModelsFromView
+﻿@page "/finalizar-cadastro/{token}"
+@layout Hackton.Application.Shared.CleanLayout
 @inject HttpClient Http
 @inject NavigationManager Nav
+@rendermode InteractiveServer
 
 <h3 class="mb-4">Finalizar Cadastro</h3>
 
@@ -11,7 +11,7 @@
     <div class="alert alert-info">@mensagem</div>
 }
 
-<EditForm OnValidSubmit="Enviar">
+<EditForm Model="model"  OnValidSubmit="Enviar">
     <DataAnnotationsValidator />
     <ValidationSummary />
 
@@ -36,6 +36,11 @@
     <InputText class="form-control mb-2"
                placeholder="RG do Responsável"
                @bind-Value="model.Aluno.RgResponsavel" />
+
+    <label class="form-label mt-2">Data de Nascimento</label>
+    <InputDate class="form-control mb-2"
+               @bind-Value="model.Aluno.DataNascimento" />
+    <ValidationMessage For="@(() => model.Aluno.DataNascimento)" />
 
 
     <h5 class="mt-4">Endereço</h5>
@@ -69,13 +74,13 @@
                @bind-Value="model.Endereco.Cep" />
 
 
-    <h5 class="mt-4">Documento</h5>
+ @*    <h5 class="mt-4">Documento</h5>
 
     <InputText class="form-control mb-2"
                placeholder="Tipo do Documento (RG, CPF, Comprovante...)"
                @bind-Value="model.DocumentoAluno.TipoDocumento" />
 
-    <InputFile OnChange="UploadArquivo" class="form-control mb-3" />
+    <InputFile OnChange="UploadArquivo" class="form-control mb-3" /> *@
 
     <button type="submit" class="btn btn-primary">
         Enviar Cadastro
@@ -90,29 +95,32 @@
     {
         Aluno = new Aluno(),
         Endereco = new Endereco(),
-        DocumentoAluno = new DocumentoAluno()
+        
     };
 
+    [Parameter]
+    public string? token { get; set; }
+
     private IBrowserFile? arquivoSelecionado;
+
     private string? mensagem;
-    private string? token;
+    
+    // protected override void OnInitialized()
+    // {
+    //     var uri = Nav.ToAbsoluteUri(Nav.Uri);
+    //     var query = Microsoft.AspNetCore.WebUtilities
+    //         .QueryHelpers.ParseQuery(uri.Query);
 
-    protected override void OnInitialized()
-    {
-        var uri = Nav.ToAbsoluteUri(Nav.Uri);
-        var query = Microsoft.AspNetCore.WebUtilities
-            .QueryHelpers.ParseQuery(uri.Query);
+    //     if (query.TryGetValue("token", out var tokenValue))
+    //     {
+    //         token = tokenValue;
+    //     }
+    // }
 
-        if (query.TryGetValue("token", out var tokenValue))
-        {
-            token = tokenValue;
-        }
-    }
-
-    private void UploadArquivo(InputFileChangeEventArgs e)
-    {
-        arquivoSelecionado = e.File;
-    }
+    // private void UploadArquivo(InputFileChangeEventArgs e)
+    // {
+    //     arquivoSelecionado = e.File;
+    // }
 
     private async Task Enviar()
     {
@@ -122,11 +130,11 @@
             return;
         }
 
-        if (arquivoSelecionado == null)
-        {
-            mensagem = "Selecione um arquivo.";
-            return;
-        }
+        // if (arquivoSelecionado == null)
+        // {
+        //     mensagem = "Selecione um arquivo.";
+        //     return;
+        // }
 
         var content = new MultipartFormDataContent();
 
@@ -137,6 +145,8 @@
         content.Add(new StringContent(model.Aluno.NomePai ?? ""), "Aluno.NomePai");
         content.Add(new StringContent(model.Aluno.RgAluno ?? ""), "Aluno.RgAluno");
         content.Add(new StringContent(model.Aluno.RgResponsavel ?? ""), "Aluno.RgResponsavel");
+        content.Add(new StringContent(model.Aluno.Status ?? "pendente"), "Aluno.Status");
+        content.Add(new StringContent(model.Aluno.DataNascimento.ToString()), "Aluno.DataNascimento");
 
         content.Add(new StringContent(model.Endereco.Logradouro ?? ""), "Endereco.Logradouro");
         content.Add(new StringContent(model.Endereco.Numero ?? ""), "Endereco.Numero");
@@ -146,21 +156,21 @@
         content.Add(new StringContent(model.Endereco.Estado ?? ""), "Endereco.Estado");
         content.Add(new StringContent(model.Endereco.Cep ?? ""), "Endereco.Cep");
 
-        content.Add(new StringContent(model.DocumentoAluno.TipoDocumento ?? ""), "DocumentoAluno.TipoDocumento");
+        // content.Add(new StringContent(model.DocumentoAluno.TipoDocumento ?? ""), "DocumentoAluno.TipoDocumento");
 
-        var stream = arquivoSelecionado.OpenReadStream(5 * 1024 * 1024);
+        // var stream = arquivoSelecionado.OpenReadStream(5 * 1024 * 1024);
 
-        var fileContent = new StreamContent(stream);
-        fileContent.Headers.ContentType =
-            new System.Net.Http.Headers.MediaTypeHeaderValue(arquivoSelecionado.ContentType);
+        // var fileContent = new StreamContent(stream);
+        // fileContent.Headers.ContentType =
+        //     new System.Net.Http.Headers.MediaTypeHeaderValue(arquivoSelecionado.ContentType);
 
-        content.Add(fileContent, "arquivo", arquivoSelecionado.Name);
+        // content.Add(fileContent, "arquivo", arquivoSelecionado.Name);
 
-        var response = await Http.PostAsync("api/Aluno/finalizar-cadastro", content);
+        var response = await Http.PostAsync("https://localhost:7297/Aluno/finalizar-cadastro", content);
 
         if (response.IsSuccessStatusCode)
         {
-            mensagem = "Cadastro realizado com sucesso!";
+            mensagem = "Cadastro realizado com sucesso! Por gentileza feche a pagina";
         }
         else
         {
