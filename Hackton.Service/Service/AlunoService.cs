@@ -2,10 +2,12 @@
 using Hackton.Domain.DTO;
 using Hackton.Domain.Entities;
 using Hackton.Domain.ModelsFromView;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
-using System.IO;
+using Microsoft.EntityFrameworkCore;
 using System;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Hackton.Service.Service
 {
@@ -34,8 +36,61 @@ namespace Hackton.Service.Service
 
         }
 
+        public async Task<bool> CriarAlunoCompletoAsync(AlunoCompleto model, string token)
+        {
+            if (model.Aluno == null ||
+                model.Endereco == null ||
+                model.DocumentoAluno == null)
+                return false;
+
+            var hash = GerarHash(token);
+
+            var preCadastro = await _context.PreCadastros
+                .FirstOrDefaultAsync(p => p.HashToken == hash);
+
+            if (preCadastro == null)
+                return false;
+
+            if (preCadastro.ExpiraEm < DateTime.UtcNow)
+                return false;
+
+            if (preCadastro.UtilizadoEm != null)
+                return false;
+
+            model.Aluno.Id = Guid.NewGuid();
+            model.Endereco.Id = Guid.NewGuid();
+            model.DocumentoAluno.Id = Guid.NewGuid();
+
+            model.Aluno.PreCadastroId = preCadastro.id;
+
+            model.Endereco.AlunoId = model.Aluno.Id;
+            model.Endereco.CriadoEm = DateTime.UtcNow;
+
+            model.DocumentoAluno.AlunoId = model.Aluno.Id;
+            model.DocumentoAluno.EnviadoEm = DateTime.UtcNow;
+
+            model.Aluno.Status = "PENDENTE";
+            model.Aluno.CriadoEm = DateTime.UtcNow;
+            model.Aluno.AtualizadoEm = DateTime.UtcNow;
+
+            _context.Alunos.Add(model.Aluno);
+            _context.Enderecos.Add(model.Endereco);
+            _context.DocumentosAluno.Add(model.DocumentoAluno);
+
+            preCadastro.UtilizadoEm = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
 
 
+        private string GerarHash(string input)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
+            return Convert.ToBase64String(bytes);
+        }
         public async Task ValidateStudentAsync(ValidateBody validate)
         {
             var aluno = await _context.Alunos.FindAsync(validate.Id);
