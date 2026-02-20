@@ -1,0 +1,296 @@
+﻿@page "/editar/{Id:guid}"
+@rendermode InteractiveServer
+@using System.Text.Json
+@using Hackton.Domain.ModelsFromView
+@using Hackton.Domain.Entities
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Linq
+@inject HttpClient Http
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NavigationManager Navigation
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb bg-white p-2 rounded shadow-sm">
+            <li class="breadcrumb-item"><a href="/">Início</a></li>
+            <li class="breadcrumb-item"><a href="/">Cadastros</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Editar Aluno</li>
+        </ol>
+    </nav>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h4 class="card-title mb-3">Editar aluno</h4>
+
+            @if (isLoading)
+            {
+                <div class="alert alert-info">Carregando informações do aluno...</div>
+            }
+            else if (loadError is not null)
+            {
+                <div class="alert alert-danger">Erro: @loadError</div>
+            }
+            else if (aluno is null || aluno.Aluno is null)
+            {
+                <div class="alert alert-warning">Nenhum aluno encontrado para edição.</div>
+            }
+            else
+            {
+                <EditForm Model="aluno" OnValidSubmit="SaveAluno">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Nome completo</label>
+                                <input class="form-control" @bind="aluno.Aluno.Nome" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">RG (Responsável)</label>
+                                <input class="form-control" @bind="aluno.Aluno.RgResponsavel" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" @bind="aluno.Aluno.Status">
+                                    <option value="">-- selecione --</option>
+                                    <option value="aprovado">aprovado</option>
+                                    <option value="rejeitado">rejeitado</option>
+                                    <option value="pendente">pendente</option>
+                                    <option value="inativo">inativo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">Endereço</div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <label class="form-label small text-muted">Logradouro</label>
+                                        <input class="form-control" @bind="aluno.Endereco.Logradouro" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small text-muted">Número</label>
+                                        <input class="form-control" @bind="aluno.Endereco.Numero" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small text-muted">Complemento</label>
+                                        <input class="form-control" @bind="aluno.Endereco.Complemento" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small text-muted">Bairro</label>
+                                        <input class="form-control" @bind="aluno.Endereco.Bairro" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small text-muted">Cidade</label>
+                                        <input class="form-control" @bind="aluno.Endereco.Cidade" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small text-muted">Estado</label>
+                                        <input class="form-control" @bind="aluno.Endereco.Estado" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small text-muted">CEP</label>
+                                        <input class="form-control" @bind="aluno.Endereco.Cep" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card mb-3">
+                                <div class="card-header">Documentos / Anexos</div>
+                                <div class="card-body">
+                                    @if (aluno.DocumentosAluno == null || !aluno.DocumentosAluno.Any())
+                                    {
+                                        <div class="text-muted mb-2">Nenhum documento cadastrado.</div>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var doc in aluno.DocumentosAluno)
+                                        {
+                                            <div class="mb-2 border rounded p-2 d-flex align-items-start justify-content-between">
+                                                <div>
+                                                    <div class="mb-1 small text-muted">Tipo</div>
+                                                    <div>@doc.TipoDocumento</div>
+                                                    <div class="mb-1 small text-muted mt-2">Arquivo</div>
+                                                    @if (!string.IsNullOrEmpty(doc.CaminhoArquivo) && Uri.IsWellFormedUriString(doc.CaminhoArquivo, UriKind.Absolute))
+                                                    {
+                                                        <a class="btn btn-sm btn-outline-primary" target="_blank" href="@doc.CaminhoArquivo">Abrir arquivo</a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="text-muted">@doc.CaminhoArquivo</div>
+                                                    }
+                                                    <div class="mb-1 small text-muted mt-2">Tipo MIME</div>
+                                                    <div>@doc.TipoMime</div>
+                                                    <div class="mb-1 small text-muted mt-2">Enviado em</div>
+                                                    <div>@FormatValueString(doc.EnviadoEm)</div>
+                                                </div>
+                                                <div class="ms-3">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveDocumento(doc.Id)">Remover</button>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" disabled="@isProcessing">Salvar alterações</button>
+                    </div>
+                </EditForm>
+
+                @if (!string.IsNullOrEmpty(statusMessage))
+                {
+                    <div class="mt-3 alert alert-secondary">@statusMessage</div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private AlunoCompleto? aluno;
+    private bool isLoading = true;
+    private bool isProcessing = false;
+    private string? loadError;
+    private string? statusMessage;
+
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAluno();
+    }
+
+    private async Task LoadAluno()
+    {
+        try
+        {
+            isLoading = true;
+            aluno = await Http.GetFromJsonAsync<AlunoCompleto>($"https://localhost:7297/Aluno/GetAlunoById?id={Id}");
+            // ensure nested objects exist for binding
+            if (aluno != null)
+            {
+                aluno.Aluno ??= new Hackton.Domain.Entities.Aluno();
+                aluno.Endereco ??= new Hackton.Domain.Entities.Endereco();
+                aluno.DocumentosAluno ??= new List<DocumentoAluno>();
+            }
+        }
+        catch (Exception ex)
+        {
+            loadError = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveAluno()
+    {
+        if (aluno == null) return;
+
+        
+        if (string.IsNullOrWhiteSpace(aluno.Aluno?.Nome))
+        {
+            statusMessage = "O nome do aluno é obrigatório.";
+            return;
+        }
+
+        var confirm = await JS.InvokeAsync<bool>("confirm", "Confirma salvar as alterações deste aluno?");
+        if (!confirm) return;
+
+        isProcessing = true;
+        statusMessage = null;
+        try
+        {
+            var url = "https://localhost:7297/Aluno/UpdateAluno";
+            var content = new StringContent(JsonSerializer.Serialize(aluno), System.Text.Encoding.UTF8, "application/json");
+            var resp = await Http.PutAsync(url, content);
+            if (resp.IsSuccessStatusCode)
+            {
+                statusMessage = "Alterações salvas com sucesso.";
+                await LoadAluno();
+            }
+            else
+            {
+                var conteudo = await resp.Content.ReadAsStringAsync();
+                statusMessage = $"Erro ao salvar: {resp.StatusCode} - {conteudo}";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Erro durante a solicitação: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    private async Task UploadFile(InputFileChangeEventArgs e)
+    {
+        if (aluno == null) return;
+        var file = e.File;
+        if (file == null) return;
+
+        try
+        {
+            isProcessing = true;
+            using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024 * 50); // 50 MB
+            var content = new MultipartFormDataContent();
+            var streamContent = new StreamContent(stream);
+            streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType ?? "application/octet-stream");
+            content.Add(streamContent, "file", file.Name);
+            content.Add(new StringContent(aluno.Aluno?.Id.ToString() ?? string.Empty), "AlunoId");
+
+            var resp = await Http.PostAsync("https://localhost:7297/Aluno/UploadDocumento", content);
+            if (resp.IsSuccessStatusCode)
+            {
+               
+                await LoadAluno();
+                statusMessage = "Arquivo enviado com sucesso.";
+            }
+            else
+            {
+                var txt = await resp.Content.ReadAsStringAsync();
+                statusMessage = $"Falha ao enviar arquivo: {resp.StatusCode} - {txt}";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = "Erro no upload: " + ex.Message;
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void RemoveDocumento(Guid documentId)
+    {
+        if (aluno?.DocumentosAluno == null) return;
+        var doc = aluno.DocumentosAluno.FirstOrDefault(d => d.Id == documentId);
+        if (doc != null)
+        {
+            aluno.DocumentosAluno.Remove(doc);
+            statusMessage = "Documento removido localmente. Salve para persistir.";
+        }
+    }
+
+    private string FormatValueString(object? value)
+    {
+        if (value == null) return "(vazio)";
+        if (value is DateTime dt) return dt.ToString("g");
+        return value.ToString() ?? string.Empty;
+    }
+}

@@ -72,7 +72,7 @@
                             <td class="d-none d-md-table-cell">@aluno.RgResponsavel</td>
                             <td><span class="badge @GetStatusClass(aluno.Status)">@aluno.Status</span></td>
                             <td class="text-end">
-                                <button type="button" class="btn btn-sm btn-outline-secondary me-1" @onclick="() => ValidarAluno(aluno.Id)" title="Validar">✏️</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary me-1" @onclick="() => ValidarAluno(aluno.Id)" title="Validar">✅</button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary me-1" @onclick="() => EditAluno(aluno.Id)" title="Editar">✏️</button>
                                 <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(aluno.Id)" title="Excluir">🗑️</button>
                             </td>
@@ -197,7 +197,7 @@
     }
     void EditAluno(Guid id)
     {
-        Navigation.NavigateTo($"/alunos/edit/{id}");
+        Navigation.NavigateTo($"/editar/{id}");
     }
 
     void ConfirmDelete(Guid id)
@@ -217,7 +217,7 @@
         deletingId = confirmDeleteId;
         try
         {
-            var res = await Http.DeleteAsync($"https://localhost:7297/Aluno/{deletingId.Value}");
+            var res = await Http.DeleteAsync($"https://localhost:7297/Aluno/DeleteAluno?id={deletingId.Value}");
             if (res.IsSuccessStatusCode)
             {
                 alunos?.RemoveAll(a => a.Id == deletingId.Value);
@@ -256,9 +256,10 @@
     {
         return status?.ToLower() switch
         {
-            "ativo" => "bg-success text-white",
+            "aprovado" => "bg-success text-white",
             "inativo" => "bg-secondary text-white",
-            "pendente" => "bg-warning text-dark",
+            "pendente" => "bg-warning text-white",
+            "reprovado" => "bg-danger text-dark",
             _ => "bg-info text-dark",
         };
     }
