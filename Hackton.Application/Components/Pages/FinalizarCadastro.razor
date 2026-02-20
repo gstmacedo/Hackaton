@@ -1,0 +1,170 @@
+﻿@page "/finalizar-cadastro"
+@using Hackton.Domain.Entities
+@using Hackton.Domain.ModelsFromView
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<h3 class="mb-4">Finalizar Cadastro</h3>
+
+@if (!string.IsNullOrEmpty(mensagem))
+{
+    <div class="alert alert-info">@mensagem</div>
+}
+
+<EditForm OnValidSubmit="Enviar">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <h5 class="mt-3">Dados do Aluno</h5>
+
+    <InputText class="form-control mb-2"
+               placeholder="Nome Completo"
+               @bind-Value="model.Aluno.Nome" />
+
+    <InputText class="form-control mb-2"
+               placeholder="Nome da Mãe"
+               @bind-Value="model.Aluno.NomeName" />
+
+    <InputText class="form-control mb-2"
+               placeholder="Nome do Pai"
+               @bind-Value="model.Aluno.NomePai" />
+
+    <InputText class="form-control mb-2"
+               placeholder="RG do Aluno"
+               @bind-Value="model.Aluno.RgAluno" />
+
+    <InputText class="form-control mb-2"
+               placeholder="RG do Responsável"
+               @bind-Value="model.Aluno.RgResponsavel" />
+
+
+    <h5 class="mt-4">Endereço</h5>
+
+    <InputText class="form-control mb-2"
+               placeholder="Logradouro"
+               @bind-Value="model.Endereco.Logradouro" />
+
+    <InputText class="form-control mb-2"
+               placeholder="Número"
+               @bind-Value="model.Endereco.Numero" />
+
+    <InputText class="form-control mb-2"
+               placeholder="Complemento"
+               @bind-Value="model.Endereco.Complemento" />
+
+    <InputText class="form-control mb-2"
+               placeholder="Bairro"
+               @bind-Value="model.Endereco.Bairro" />
+
+    <InputText class="form-control mb-2"
+               placeholder="Cidade"
+               @bind-Value="model.Endereco.Cidade" />
+
+    <InputText class="form-control mb-2"
+               placeholder="Estado (UF)"
+               @bind-Value="model.Endereco.Estado" />
+
+    <InputText class="form-control mb-2"
+               placeholder="CEP"
+               @bind-Value="model.Endereco.Cep" />
+
+
+    <h5 class="mt-4">Documento</h5>
+
+    <InputText class="form-control mb-2"
+               placeholder="Tipo do Documento (RG, CPF, Comprovante...)"
+               @bind-Value="model.DocumentoAluno.TipoDocumento" />
+
+    <InputFile OnChange="UploadArquivo" class="form-control mb-3" />
+
+    <button type="submit" class="btn btn-primary">
+        Enviar Cadastro
+    </button>
+
+</EditForm>
+
+
+@code {
+
+    private AlunoCompleto model = new()
+    {
+        Aluno = new Aluno(),
+        Endereco = new Endereco(),
+        DocumentoAluno = new DocumentoAluno()
+    };
+
+    private IBrowserFile? arquivoSelecionado;
+    private string? mensagem;
+    private string? token;
+
+    protected override void OnInitialized()
+    {
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities
+            .QueryHelpers.ParseQuery(uri.Query);
+
+        if (query.TryGetValue("token", out var tokenValue))
+        {
+            token = tokenValue;
+        }
+    }
+
+    private void UploadArquivo(InputFileChangeEventArgs e)
+    {
+        arquivoSelecionado = e.File;
+    }
+
+    private async Task Enviar()
+    {
+        if (string.IsNullOrEmpty(token))
+        {
+            mensagem = "Token inválido.";
+            return;
+        }
+
+        if (arquivoSelecionado == null)
+        {
+            mensagem = "Selecione um arquivo.";
+            return;
+        }
+
+        var content = new MultipartFormDataContent();
+
+        content.Add(new StringContent(token), "token");
+
+        content.Add(new StringContent(model.Aluno.Nome ?? ""), "Aluno.Nome");
+        content.Add(new StringContent(model.Aluno.NomeName ?? ""), "Aluno.NomeName");
+        content.Add(new StringContent(model.Aluno.NomePai ?? ""), "Aluno.NomePai");
+        content.Add(new StringContent(model.Aluno.RgAluno ?? ""), "Aluno.RgAluno");
+        content.Add(new StringContent(model.Aluno.RgResponsavel ?? ""), "Aluno.RgResponsavel");
+
+        content.Add(new StringContent(model.Endereco.Logradouro ?? ""), "Endereco.Logradouro");
+        content.Add(new StringContent(model.Endereco.Numero ?? ""), "Endereco.Numero");
+        content.Add(new StringContent(model.Endereco.Complemento ?? ""), "Endereco.Complemento");
+        content.Add(new StringContent(model.Endereco.Bairro ?? ""), "Endereco.Bairro");
+        content.Add(new StringContent(model.Endereco.Cidade ?? ""), "Endereco.Cidade");
+        content.Add(new StringContent(model.Endereco.Estado ?? ""), "Endereco.Estado");
+        content.Add(new StringContent(model.Endereco.Cep ?? ""), "Endereco.Cep");
+
+        content.Add(new StringContent(model.DocumentoAluno.TipoDocumento ?? ""), "DocumentoAluno.TipoDocumento");
+
+        var stream = arquivoSelecionado.OpenReadStream(5 * 1024 * 1024);
+
+        var fileContent = new StreamContent(stream);
+        fileContent.Headers.ContentType =
+            new System.Net.Http.Headers.MediaTypeHeaderValue(arquivoSelecionado.ContentType);
+
+        content.Add(fileContent, "arquivo", arquivoSelecionado.Name);
+
+        var response = await Http.PostAsync("api/Aluno/finalizar-cadastro", content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            mensagem = "Cadastro realizado com sucesso!";
+        }
+        else
+        {
+            mensagem = await response.Content.ReadAsStringAsync();
+        }
+    }
+}

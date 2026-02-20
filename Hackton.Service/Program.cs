@@ -20,6 +20,8 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddDbContext<AppDbContext>(op => op.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 builder.Services.AddScoped<AlunoService>();
+builder.Services.AddScoped<PreCadastroService>();
+builder.Services.AddScoped<EmailService>();
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
@@ -32,6 +34,8 @@ if (app.Environment.IsDevelopment())
 }
 
 // Configure the HTTP request pipeline.
+
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 
