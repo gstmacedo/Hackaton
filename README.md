@@ -16,14 +16,22 @@ Outra evolução planejada é a implementação de **OCR (Reconhecimento Óptico
 
 ## 🏗️ Arquitetura do Projeto
 
-O projeto está dividido em múltiplas camadas seguindo uma organização separada por responsabilidades:
+O projeto foi estruturado seguindo os princípios de **Arquitetura Limpa (Clean Architecture)**, visando:
+
+- Separação clara de responsabilidades  
+- Baixo acoplamento  
+- Alta coesão  
+- Facilidade de manutenção e testes  
+- Escalabilidade futura
+  
+- A arquitetura foi pensada para manter separação de responsabilidades e facilitar futuras evoluções.
 
 - `Hackton.Application`
 - `Hackton.Domain`
 - `Hackton.Service`
 - `docker-compose.yaml`
 
-A arquitetura foi pensada para manter separação de responsabilidades e facilitar futuras evoluções.
+
 
 ---
 
